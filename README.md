@@ -19,3 +19,77 @@ nelmio_cors:
   paths:
     '^/api/': ~
 ```
+## Yeni Endpoint Oluşturma 🟢
+* php bin/console make:controller ÜrünController
+* Örnek bir CRUD operation'a sahip controller ->
+```
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Product;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+
+class ProductController extends AbstractController
+{
+
+
+    #[Route('/api/products', name: 'app_products', methods: ['GET'])]
+    public function  index(EntityManagerInterface $em): JsonResponse
+    {
+        $products = $em->getRepository(Product::class)->findAll();
+
+        $data =array_map(fn(Product $p)=> [
+            'id'=> $p->getId(),
+            'name'=> $p->getName(),
+            'price'=> $p->getPrice()
+        ], $products);
+
+        return new JsonResponse($data);
+    }
+
+    #[Route('/api/products/{id}', name: 'app_product_show', methods: ['GET'])]
+        public function show(int $id):JsonResponse
+    {
+        return new JsonResponse([
+            'id' => $id,
+            'name' => 'Ürün ' . $id,
+            'price' => rand(100, 10000),
+        ]);
+    }
+
+    #[Route('/api/products', name:'app_product_create', methods: ['POST'])]
+    public function create(Request $request,EntityManagerInterface $em):JsonResponse
+        {
+            $data =json_decode($request->getContent(), true);
+            $product = new Product();
+            $product->setName($data['name']);
+            $product->setPrice($data['price'] );
+            $em->persist($product);
+            $em->flush();
+
+            if(!$data || !isset($data['name'], $data['price'])){
+                return  new JsonResponse([
+                    'error'=> 'Eksik parametre. "name" ve "price" gerekli.'
+                ], 400);
+            }
+
+            return new JsonResponse([
+                'id' => $product->getId(),
+                'name' => $product->getName(),
+                'price' => $product->getPrice(),
+            ], 201);
+
+        }
+}
+
+```
+* Şimdi burada ürün oluşturdukça bir data-base'e kaydetmek için config -> doctrine.yaml dosyasına gidiyoruz. Url kısmına bilgilerimizi giriyoruz. Şimdilik proje içerisine kaydedilen sqlite kullanabiliriz. ( var -> altına data.db olarak açıyor. ) url'imiz **url: 'sqlite:///%kernel.project_dir%/var/data.db'**
+* Daha sonra bir entity oluşturuyoruz. Bizim konumumuzda **php bin/console make:entity Product**
+* Sonrasında alanlarımızı, tiplerini ve boş olup olamayacaklarını belirtiyoruz.
+* Alanlar eklendikten sonra migration yapmamız gerek ( **php bin/console make:migration ve devamında php bin/console doctrine:migrations:migrate** ) 
+
