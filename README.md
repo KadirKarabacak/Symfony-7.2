@@ -167,6 +167,7 @@ class ProductController extends AbstractController
 ```
 # Relations ve Repository sorguları
 * Sonradan ikinci bir Entity ile varolan bir entity için ilişki oluşturursan foreign key hatası alırsın. Bunu düzeltmek için **php bin/console doctrine:database:drop --force** database'i komple sil. Sonra tekrar **php bin/console doctrine:database:create** ve migration **php bin/console doctrine:migrations:migrate** yap. Böylece devam edebilirsin. ✅
+# DİĞER
 * PUT / PATCH / DELETE endpointleri ekle ❌
 * Services ve EventSubscriber ile controller logic’i soyutla ❌
 * API token veya JWT authentication ekle ❌
