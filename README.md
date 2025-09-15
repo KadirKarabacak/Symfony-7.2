@@ -36,8 +36,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class ProductController extends AbstractController
 {
-
-
+    # PRODUCT LIST
     #[Route('/api/products', name: 'app_products', methods: ['GET'])]
     public function  index(EntityManagerInterface $em): JsonResponse
     {
@@ -52,16 +51,24 @@ class ProductController extends AbstractController
         return new JsonResponse($data);
     }
 
+    # PRODUCT SHOW
     #[Route('/api/products/{id}', name: 'app_product_show', methods: ['GET'])]
-        public function show(int $id):JsonResponse
+        public function show(EntityManagerInterface $em, int $id):JsonResponse
     {
+        $product = $em->getRepository(Product::class)->find($id);
+
+        if(!$product){
+            return new JsonResponse(['error'=> 'Ürün bulunamadı'], 404);
+        }
+
         return new JsonResponse([
-            'id' => $id,
-            'name' => 'Ürün ' . $id,
-            'price' => rand(100, 10000),
+            'id' => $product->getId(),
+            'name' => $product->getName(),
+            'price' => $product->getPrice(),
         ]);
     }
 
+    # CREATE PRODUCT
     #[Route('/api/products', name:'app_product_create', methods: ['POST'])]
     public function create(Request $request,EntityManagerInterface $em):JsonResponse
         {
@@ -85,7 +92,25 @@ class ProductController extends AbstractController
             ], 201);
 
         }
+
+        # DELETE PRODUCT
+    #[Route('/api/products/{id}', name:'app_product_delete', methods: ['DELETE'])]
+    public function delete(EntityManagerInterface $em, $id):JsonResponse
+    {
+       $product =$em->getRepository(Product::class)->find($id);
+
+            if (!$product) {
+                return new JsonResponse(['error' => 'Ürün bulunamadı'], 404);
+            }
+
+            $em->remove($product);
+            $em->flush();
+
+        return new JsonResponse(['message' => 'Ürün silindi'], 200);
+
+    }
 }
+
 
 ```
 * Şimdi burada ürün oluşturdukça bir data-base'e kaydetmek için config -> doctrine.yaml dosyasına gidiyoruz. Url kısmına bilgilerimizi giriyoruz. Şimdilik proje içerisine kaydedilen sqlite kullanabiliriz. ( var -> altına data.db olarak açıyor. ) url'imiz **url: 'sqlite:///%kernel.project_dir%/var/data.db'**
