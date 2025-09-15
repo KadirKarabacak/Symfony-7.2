@@ -116,5 +116,61 @@ class ProductController extends AbstractController
 * Şimdi burada ürün oluşturdukça bir data-base'e kaydetmek için config -> doctrine.yaml dosyasına gidiyoruz. Url kısmına bilgilerimizi giriyoruz. Şimdilik proje içerisine kaydedilen sqlite kullanabiliriz. ( var -> altına data.db olarak açıyor. ) url'imiz **url: 'sqlite:///%kernel.project_dir%/var/data.db'**
 * Daha sonra bir entity oluşturuyoruz. Bizim konumumuzda **php bin/console make:entity Product**
 * Sonrasında alanlarımızı, tiplerini ve boş olup olamayacaklarını belirtiyoruz.
-* Alanlar eklendikten sonra migration yapmamız gerek ( **php bin/console make:migration ve devamında php bin/console doctrine:migrations:migrate** ) 
+* Alanlar eklendikten sonra migration yapmamız gerek ( **php bin/console make:migration ve devamında php bin/console doctrine:migrations:migrate** )
+### VALIDATION
+* Validasyon için **composer require symfony/validator** yüklüyoruz. Sonrasında ( başka şekilde de yapılabilir ) controller içinde aşağıdaki örnekteki gibi **constraints** oluşturup endpoint işlemini gerçekleştirmeden önce gelen veriyi validate edebiliriz.
+```
+# CREATE PRODUCT
+    #[Route('/api/products', name:'app_product_create', methods: ['POST'])]
+    public function create(Request $request,EntityManagerInterface $em, ValidatorInterface $validator):JsonResponse
+        {
+            $data =json_decode($request->getContent(), true);
+
+            $constraints = new Assert\Collection([
+                'name'  => [
+                    new Assert\NotBlank(message: 'Name is required'),
+                    new Assert\Length(max: 255, maxMessage: 'Name cannot exceed 255 chars')
+                ],
+                'price' => [
+                    new Assert\NotBlank(message: 'Price is required'),
+                    new Assert\Type(type: 'numeric', message: 'Price must be numeric'),
+                    new Assert\Positive(message: 'Price must be positive')
+                ],
+            ]);
+
+            // 2) Ham data’yı validate et
+            $errors = $validator->validate($data, $constraints);
+
+            if (count($errors) > 0) {
+                $errorMessages = [];
+                foreach ($errors as $error) {
+                    $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+                }
+
+                return new JsonResponse(['errors' => $errorMessages], 400);
+            }
+
+            $product = new Product();
+            $product->setName($data['name']);
+            $product->setPrice($data['price'] );
+
+            $em->persist($product);
+            $em->flush();
+
+            return new JsonResponse([
+                'id' => $product->getId(),
+                'name' => $product->getName(),
+                'price' => $product->getPrice(),
+            ], 201);
+
+        }
+```
+# Relations ve Repository sorguları
+* Sonradan ikinci bir Entity ile varolan bir entity için ilişki oluşturursan foreign key hatası alırsın. Bunu düzeltmek için **php bin/console doctrine:database:drop --force** database'i komple sil. Sonra tekrar **php bin/console doctrine:database:create** ve migration **php bin/console doctrine:migrations:migrate** yap. Böylece devam edebilirsin.
+PUT / PATCH / DELETE endpointleri ekle
+Services ve EventSubscriber ile controller logic’i soyutla
+API token veya JWT authentication ekle
+Pagination ve filtering ekle
+Frontend ile tam entegrasyon yap
+Test yaz ve migration yönetimini öğren
 
