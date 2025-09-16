@@ -175,3 +175,7 @@ class ProductController extends AbstractController
 * Frontend ile tam entegrasyon yap ❌
 * Test yaz ve migration yönetimini öğren ❌
 
+## ÖNEMLİ
+* Eğer php & symfony kullanan bir proje var ise bilgisayarda xampp - wamp - laragon gibi php kullanmanı sağlayan araçlar olmalı.
+* wamp için **https://www.wampserver.com/en/**
+* Sonrasında yine symfony için bağımlılıkları yükleyebilmek adına **composer** yüklü olmalı. Composer için -> **https://getcomposer.org/download/**
